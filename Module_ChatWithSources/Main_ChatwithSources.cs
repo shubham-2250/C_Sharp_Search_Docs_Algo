@@ -26,7 +26,7 @@ namespace Module_ChatWithSources
             CosineSimiliarityUtils.FillLemmatizer();
         }
 
-        public (string, Dictionary<int, string>) CWSEntrypoint(List<(List<string> sources, string message, string model, long tokenLimit, bool forceChunkify)> sourceParamsList)
+        public (string,List<string>, Dictionary<int, string>) CWSEntrypoint(List<(List<string> sources, string message, string model, long tokenLimit, bool forceChunkify)> sourceParamsList)
         {
             Dictionary<string,int> sourcesToInt = new Dictionary<string,int>();
             Dictionary<int,string> intToSources = new Dictionary<int,string>();
@@ -47,45 +47,69 @@ namespace Module_ChatWithSources
             {
                 intToSources.Add(item.Value,item.Key);
             }
-            return (GetCWSString(sourcesToInt,chunks), intToSources);
+            var tuple_string_ListOfString = GetCWSString(sourcesToInt, chunks);
+            return (tuple_string_ListOfString.Item1, tuple_string_ListOfString.Item2, intToSources);
         }
 
-        string GetCWSString( Dictionary<string, int> sourcesToInt, List<ChunkParams> chunks)
+        (string,List<string>) GetCWSString( Dictionary<string, int> sourcesToInt, List<ChunkParams> chunks)
         {
             StringBuilder stringBuilder = new StringBuilder();
+            List<string> cwsStringList = new List<string>();
             foreach (var chunk in chunks)
             {
-                if(chunk.sourceName.ToLower().StartsWith("http"))
+                var str = "";
+                if (chunk.sourceName.ToLower().StartsWith("http"))
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" lineNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>\n");
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" lineNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
                 }
-                else if(chunk.sourceName.ToLower().EndsWith(".xlsx"))
+                else if (chunk.sourceName.ToLower().EndsWith(".xlsx"))
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" SheetNumber = \"{chunk.pageNumber}\" rowNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>\n");
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" SheetNumber = \"{chunk.pageNumber}\" rowNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
+
                 }
-                else if(chunk.sourceName.ToLower().EndsWith(".docx"))
+                else if (chunk.sourceName.ToLower().EndsWith(".docx"))
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" page = \"{chunk.pageNumber}\" line = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>\n");
+
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" page = \"{chunk.pageNumber}\" line = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
+
                 }
-                else if(chunk.sourceName.ToLower().EndsWith(".pptx"))
+                else if (chunk.sourceName.ToLower().EndsWith(".pptx"))
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" slideNumber = \"{chunk.pageNumber}\" > {chunk.OriginalText}  </source>\n");
+
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" slideNumber = \"{chunk.pageNumber}\" > {chunk.OriginalText}  </source>\n";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
                 }
-                else if(chunk.sourceName.ToLower().EndsWith(".csv"))
+                else if (chunk.sourceName.ToLower().EndsWith(".csv"))
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" SheetNumber = \"{chunk.pageNumber}\" rowNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>\n");
+
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" SheetNumber = \"{chunk.pageNumber}\" rowNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
                 }
-                else if(chunk.sourceName.ToLower().EndsWith(".pdf"))
+                else if (chunk.sourceName.ToLower().EndsWith(".pdf"))
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" pageNumber = \"{chunk.pageNumber}\" lineNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>\n");
+
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" pageNumber = \"{chunk.pageNumber}\" lineNumber = \"{chunk.lineNumber}\" > {chunk.OriginalText}  </source>";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
                 }
                 else
                 {
-                    stringBuilder.Append($"<source id = \"{sourcesToInt[chunk.sourceName]}\" > {chunk.OriginalText}  </source>\n");
+
+                    str = $"<source id = \"{sourcesToInt[chunk.sourceName]}\" > {chunk.OriginalText}  </source>";
+                    stringBuilder.Append(str + "\n");
+                    cwsStringList.Add(str);
                 }
             }
                
-            return stringBuilder.ToString();
+            return (stringBuilder.ToString(),cwsStringList);
         }
 
     }
