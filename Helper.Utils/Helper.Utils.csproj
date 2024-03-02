@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LemmaGenerator" Version="1.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(ProjectDir)Helper_Files\mlteast-en.lem&quot; &quot;$(ProjectDir)$(OutDir)AppX\&quot; /Y /S&#xD;&#xA;xcopy &quot;$(ProjectDir)Helper_Files\synonyms.csv&quot; &quot;$(ProjectDir)$(OutDir)AppX\&quot; /Y /S&#xD;&#xA;xcopy &quot;$(ProjectDir)Helper_Files\mlteast-en.lem&quot; &quot;$(ProjectDir)$(OutDir)&quot; /Y /S&#xD;&#xA;xcopy &quot;$(ProjectDir)Helper_Files\synonyms.csv&quot; &quot;$(ProjectDir)$(OutDir)&quot; /Y /S&#xD;&#xA;&#xD;&#xA;" />
+  </Target>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="echo Configuration: $(Configuration)&#xD;&#xA;echo DevEnvDir: $(DevEnvDir)&#xD;&#xA;echo OutDir: $(OutDir)&#xD;&#xA;echo ProjectDir: $(ProjectDir)&#xD;&#xA;echo VisualStudioVersion: $(VisualStudioVersion)&#xD;&#xA;echo AssemblySearchPaths: $(AssemblySearchPaths)&#xD;&#xA;echo AssemblyName: $(AssemblyName)&#xD;&#xA;echo BaseIntermediateOutputPath: $(BaseIntermediateOutputPath)&#xD;&#xA;echo CscToolPath: $(CscToolPath)" />
+  </Target>
+
+</Project>
