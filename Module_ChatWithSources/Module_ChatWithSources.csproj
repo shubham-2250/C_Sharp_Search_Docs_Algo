@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Helper.Utils\Helper.Utils.csproj" />
     <ProjectReference Include="..\Module_TokenCounter\Module_TokenCounter.csproj" />
+    <ProjectReference Include="..\Helpers.Utils\Helper.Utils.csproj" />
   </ItemGroup>
 
 </Project>
