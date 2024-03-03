@@ -224,7 +224,7 @@ namespace Module_ChatWithSources
 
                 }
             }
-            var lst = text.Split('\n', '\r').ToList();
+            var lst = text.Replace(". ", ".\n ").Split('\n', '\r').ToList();
             List < ChunkParams > chunks = new List < ChunkParams >();
             for (int i=0;i<lst.Count();i++)
             {
@@ -243,7 +243,7 @@ namespace Module_ChatWithSources
                 // Get the PDF page.
                 var page = document.GetPage(pageNumber);
                 // Extract text from the page.
-                var lst = page.Text.Split('\n', '\r').ToList();
+                var lst = page.Text.Replace(". ",".\n ").Split('\n', '\r').ToList();
 
                 for (int i = 0; i < lst.Count(); i++)
                 {
