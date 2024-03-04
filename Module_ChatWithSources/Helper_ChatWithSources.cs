@@ -49,19 +49,28 @@ namespace Module_ChatWithSources
                 try
                 {
                     List<ChunkParams> tempChunks = new List<ChunkParams>();
+                    object syncLock = new object();
                     Parallel.ForEach(sources, source =>
                     {
+                        var tempChunk = new List<ChunkParams>();
                         if (source.ToLower().StartsWith("http"))
                         {
-                            tempChunks.AddRange(ExtractTextFromURL(source));
+                            tempChunk = ExtractTextFromURL(source);
+
+                           
                         }
                         else if (source.ToLower().EndsWith(".pdf"))
                         {
-                            tempChunks.AddRange(ExtractTextFromPDF(source));
+                            tempChunk = ExtractTextFromPDF(source);
+                            
                         }
                         else
                         {
                             forceChunkify = true;
+                        }
+                        lock (syncLock)
+                        {
+                            tempChunks.AddRange(tempChunk);
                         }
                     });
                     tempChunks.RemoveAll(x => x.lineText.Trim().Length <= 4);
@@ -105,6 +114,7 @@ namespace Module_ChatWithSources
         void SetCosineSimilarity(string message, IEnumerable<ChunkParams> chunkParams)
         {
             ////TODO: SV : Setting CSI can also be multi threaded
+            object syncLock = new object();
             Parallel.ForEach(chunkParams, item =>
             {
                 SetCosineSimilarity(message, item);

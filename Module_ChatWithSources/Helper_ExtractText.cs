@@ -11,12 +11,25 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Helper.Utils;
+using System.Runtime.CompilerServices;
 
 namespace Module_ChatWithSources
 {
     public  interface IHelper_ExtractText
     {
         public List<ChunkParams> ExtractText(IEnumerable<string> sources);
+    }
+    public static class ThreadSafeOperations
+    {
+        static object syncLock = new object();
+        public static void AddThreadSafe(this List<ChunkParams> itemList, ChunkParams itemToBeAdded)
+        {
+            lock (syncLock)
+            {
+                itemList.Add(itemToBeAdded);
+            }
+
+        }
     }
     class Helper_ExtractText : IHelper_ExtractText
     {
@@ -28,7 +41,7 @@ namespace Module_ChatWithSources
             }
 
             var chunks = new List<ChunkParams>();
-
+            object syncLock = new object();
             Parallel.ForEach(sources, source =>
             {
                 if (source.StartsWith("http") && source.EndsWith(".pdf"))
@@ -40,7 +53,11 @@ namespace Module_ChatWithSources
 
                         foreach (var chunk in pdfChunks)
                             chunk.sourceName = source;
-                        chunks.AddRange(pdfChunks);
+                        lock (syncLock)
+                        {
+                            chunks.AddRange(pdfChunks);
+                        }
+                        
                         DeleteFile(pdfFile);
                     }
                     catch (Exception e) { }
@@ -48,7 +65,10 @@ namespace Module_ChatWithSources
                 else if (source.StartsWith("http"))
                 {
                     var urlChunks = ExtractFromUrl(source);
-                    chunks.AddRange(urlChunks);
+                    lock (syncLock)
+                    {
+                        chunks.AddRange(urlChunks);
+                    }
                 }
                 else
                 {
@@ -58,23 +78,38 @@ namespace Module_ChatWithSources
                     {
                         case ".pdf":
                             var pdfChunks = ExtractFromPdf(source);
-                            chunks.AddRange(pdfChunks);
+                            lock (syncLock)
+                            {
+                                chunks.AddRange(pdfChunks);
+                            }
                             break;
                         case ".xlsx":
                             var excelChunks = ExtractFromExcel(source);
-                            chunks.AddRange(excelChunks);
+                            lock (syncLock)
+                            {
+                                chunks.AddRange(excelChunks);
+                            }
                             break;
                         case ".csv":
                             var csvChunks = ConvertCSVtoDataTable(source);
-                            chunks.AddRange(csvChunks);
+                            lock (syncLock)
+                            {
+                                chunks.AddRange(csvChunks);
+                            }
                             break;
                         case ".pptx":
                             var pptxChunks = ConvertPPTXToChunks(source);
-                            chunks.AddRange(pptxChunks);
+                            lock (syncLock)
+                            {
+                                chunks.AddRange(pptxChunks);
+                            }
                             break;
                         case ".docx":
                             var docxChunks = ConvertDocxToChunks(source);
-                            chunks.AddRange(docxChunks);
+                            lock (syncLock)
+                            {
+                                chunks.AddRange(docxChunks);
+                            }
                             break;
                         default:
                             break;
@@ -121,31 +156,33 @@ namespace Module_ChatWithSources
                 await client.DownloadFileTaskAsync(url, file);
             }
         }
+        
         List<ChunkParams> ExtractFromPdf(string filePath)
         {
             var document = UglyToad.PdfPig.PdfDocument.Open(filePath);
 
             string prevLineText = string.Empty;
 
-            ChunkParams prevChunkParam = null;
+            
 
             List<ChunkParams> chunks = new List<ChunkParams>();
+            object syncLock = new object();
+            
 
-            ITextModificationUtils TextModificationUtilsObj = new TextModificationUtils();
-
-            for (int pageNumber = 1; pageNumber <= document.NumberOfPages; pageNumber++)
+            Parallel.For(1, document.NumberOfPages, pageNumber =>
             {
+                ITextModificationUtils TextModificationUtilsObj = new TextModificationUtils();
                 var page = document.GetPage(pageNumber);
 
                 var pageText = page.Text;
 
                 if (string.IsNullOrEmpty(pageText))
                 {
-                    continue;
+                    return;
                 }
 
                 var extractedLines = TextModificationUtilsObj.ExtractLines(pageText);
-
+                ChunkParams prevChunkParam = null;
                 foreach (var extractedLine in extractedLines)
                 {
                     int lineNumber = extractedLine.Key;
@@ -157,10 +194,13 @@ namespace Module_ChatWithSources
                         pageNumber = pageNumber.ToString(),
                         lineNumber = lineNumber.ToString(),
                         CSI = int.MinValue,
-                        lineText =  extractedLine.Value
+                        lineText = extractedLine.Value
                     };
+                    lock (syncLock)
+                    {
+                        chunks.Add(chunkParams);
+                    }
 
-                    chunks.Add(chunkParams);
 
                     if (prevChunkParam != null)
                     {
@@ -170,7 +210,7 @@ namespace Module_ChatWithSources
                     prevLineText = extractedLine.Value ?? "";
                     prevChunkParam = chunkParams;
                 }
-            }
+            });
 
             return chunks;
         }

@@ -32,10 +32,14 @@ namespace Module_ChatWithSources
             Dictionary<int,string> intToSources = new Dictionary<int,string>();
 
             List<ChunkParams> chunks = new List<ChunkParams>();
-
+            object syncLock = new object();
             Parallel.ForEach(sourceParamsList, sourceParam =>
             {
-                    chunks.AddRange(helper_ChatWithSources.CreateChunk(sourceParam));
+                var temp = helper_ChatWithSources.CreateChunk(sourceParam);
+                lock (syncLock)
+                {
+                    chunks.AddRange(temp);
+                }
             });
             int index = 1;
             foreach(ChunkParams chunkParam in chunks) 

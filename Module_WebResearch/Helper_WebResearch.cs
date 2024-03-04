@@ -8,8 +8,14 @@ namespace Module_WebResearch
         public async Task<List<List<string>>> Helper_WebResearch_List(List<string> queryList) 
         {
             List<List<string>> result = new List<List<string>>();
+            object syncLock = new object();
             await Parallel.ForEachAsync(queryList, async (query, ct) => {
-                result.Add(await GoogleSearch(query));
+                var tempRes = await GoogleSearch(query);
+                lock (syncLock)
+                {
+                    result.Add(tempRes);
+                }
+                
             });
             return result;
         }
